@@ -1,0 +1,42 @@
+name: probe
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  ui-test:
+    name: ui-test (${{ matrix.image }}, ${{ matrix.xcode }})
+    runs-on: ${{ matrix.image }}
+    timeout-minutes: 40
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - image: macos-latest
+            xcode: default
+          - image: macos-latest
+            xcode: newest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Pick Xcode
+        if: matrix.xcode == 'newest'
+        run: |
+          ls -d /Applications/Xcode*.app
+          newest=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          sudo xcode-select -s "$newest"
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Run UI test
+        run: OUT_DIR=build ./scripts/run.sh
+      - name: Upload result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: result-${{ matrix.xcode }}
+          path: build/*.xcresult
+          retention-days: 7
