@@ -12,4 +12,4 @@ brew install xcodegen
 SIM_UDID=<udid> ./scripts/run.sh # or a specific one
 ```
 
-The script prints the macOS, Xcode and iOS runtime versions, runs the test once and reports the exit code and duration. CI runs the same script on `macos-latest` with the default Xcode and with the newest Xcode installed on the image.
+The script prints the macOS, Xcode and iOS runtime versions, runs the test once and reports the exit code and duration. CI runs the same script on `macos-latest` (default and newest Xcode) and on the `xcode-27` image.

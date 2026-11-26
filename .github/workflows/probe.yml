@@ -4,6 +4,11 @@ on:
   push:
     branches: [main]
   workflow_dispatch:
+    inputs:
+      image:
+        description: Runner image to try (single job, newest Xcode on it)
+        required: false
+        default: ""
 
 permissions:
   contents: read
@@ -21,13 +26,15 @@ jobs:
             xcode: default
           - image: macos-latest
             xcode: newest
+          - image: ${{ inputs.image || 'xcode-27' }}
+            xcode: newest
     steps:
       - uses: actions/checkout@v4
       - name: Pick Xcode
         if: matrix.xcode == 'newest'
         run: |
           ls -d /Applications/Xcode*.app
-          newest=$(ls -d /Applications/Xcode_*.app | sort -V | tail -1)
+          newest=$(ls -d /Applications/Xcode_*.app | sed 's/.*Xcode_//; s/\.app$//' | sort -V | tail -1); newest=/Applications/Xcode_$newest.app
           sudo xcode-select -s "$newest"
       - name: Install XcodeGen
         run: brew install xcodegen
@@ -37,6 +44,6 @@ jobs:
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: result-${{ matrix.xcode }}
+          name: result-${{ matrix.image }}-${{ matrix.xcode }}
           path: build/*.xcresult
           retention-days: 7
