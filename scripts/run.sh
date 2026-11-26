@@ -12,16 +12,21 @@ xcodebuild -version
 xcrun simctl list runtimes | grep -i ios
 
 if [ -z "${SIM_UDID:-}" ]; then
-  SIM_UDID=$(xcrun simctl list devices available -j | python3 -c '
-import json, sys
+  # SIM_RUNTIME: runtime identifier to use (default: the newest plain iOS runtime).
+  SIM_UDID=$(xcrun simctl list devices available -j | SIM_RUNTIME="${SIM_RUNTIME:-}" python3 -c '
+import json, os, re, sys
 d = json.load(sys.stdin)["devices"]
-ios = sorted((k for k in d if "iOS" in k), key=lambda k: [int(x) for x in k.rsplit("iOS-", 1)[1].split("-")])
-for rt in reversed(ios):
-    for dev in d[rt]:
+want = os.environ["SIM_RUNTIME"]
+plain = [k for k in d if re.fullmatch(r".*SimRuntime\.iOS-[0-9-]+", k)]
+order = sorted(plain, key=lambda k: [int(x) for x in re.findall(r"[0-9]+", k.rsplit("iOS-", 1)[1])])
+for rt in ([want] if want else list(reversed(order))):
+    for dev in d.get(rt, []):
         if dev["name"].startswith("iPhone"):
             print(dev["udid"]); sys.exit()
+sys.exit("no iPhone simulator found")
 ')
 fi
+[ -n "$SIM_UDID" ] || exit 1
 echo "== simulator"
 xcrun simctl list devices | grep "$SIM_UDID"
 

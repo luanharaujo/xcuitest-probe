@@ -39,6 +39,8 @@ jobs:
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Run UI test
+        env:
+          SIM_RUNTIME: ${{ startsWith(matrix.image, 'xcode-27') && 'com.apple.CoreSimulator.SimRuntime.iOS-27-2' || '' }}
         run: OUT_DIR=build ./scripts/run.sh
       - name: Upload result
         if: always()
